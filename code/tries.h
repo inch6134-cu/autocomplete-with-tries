@@ -28,26 +28,30 @@ class Tries {
     Tries();
     ~Tries();
 
-    // Initialize Trie Node
-    TrieNode* make_node() {};
-
-    // Free Trie Node
-    void free_node (TrieNode* node) {};
 
     // Insert function
-    void insert_node(TrieNode* root, string key) {};
+    void insert_node(TrieNode* root, string key);
 
     // Delete function
-    bool delete_node(TrieNode* root, string key) {};
+    bool delete_node(TrieNode* root, string key);
 
     // Search function
-    bool search(TrieNode*root, string key) {};
+    bool search(TrieNode* root, string key);
 
     // Prefix Search
-    bool pre_search(TrieNode* root, string key) {};
+    bool pre_search(TrieNode* root, string key);
 
     private:
     TrieNode* root;
+    friend void test_insert_and_search();
+    friend void test_prefix_search();
+    friend void test_delete();
+
+    // Initialize Trie Node
+    TrieNode* make_node();
+
+    // Free Trie Node
+    void free_node (TrieNode* node);
 };
 
 

@@ -3,13 +3,18 @@
 using namespace std;
 
 Tries::Tries() {
-    root = new TrieNode;
+    root = make_node();
 }
 
-Tries::~Tries() {}
+Tries::~Tries() {
+    if(root) {
+        free_node(root);
+        root = nullptr;
+    }
+}
 
 // Initialize Trie Node
-TrieNode* make_node() {
+TrieNode* Tries::make_node() {
     TrieNode* node = new TrieNode;
     for (int i = 0; i < N; i++) {
         node->children[i] = nullptr;
@@ -19,7 +24,9 @@ TrieNode* make_node() {
 }
 
 // Free Trie Node from memory
-void free_node (TrieNode* node) {
+void Tries::free_node (TrieNode* node) {
+    if(node == nullptr) return;
+
     for (int i = 0; i < N; i++)
     {
         if(node->children[i] != nullptr) {
@@ -31,7 +38,7 @@ void free_node (TrieNode* node) {
 }
 
 // Insert function
-void insert_node(TrieNode* root, string key) {
+void Tries::insert_node(TrieNode* root, string key) {
     // initialize pointer to root
     TrieNode* cursor = root;
 
@@ -51,51 +58,70 @@ void insert_node(TrieNode* root, string key) {
 }
 
 // Delete function
-bool delete_node(TrieNode* root, string key) {
+bool Tries::delete_node(TrieNode* root, string key) {
+    if(key.empty()) return false;
+    
+    // Initialize pointer to root
     TrieNode* cursor = root;
-    TrieNode* leaf = nullptr;
-    char leaf_char = 'a';
+    
+    // Initialize array to save path
+    TrieNode* path[key.length() + 1];
+    int path_index = 0;
+    
+    path[path_index++] = cursor;
 
+    // iterate over key
     for(auto c : key) {
+        // if path does not exist return false
         if(cursor->children[c - 'a'] == nullptr) return false;
-        else {
-            int count = 0;
-            for (int i = 0; i < N; i++) {
-                if(cursor->children[i] != nullptr) count++;
-            }
 
-            if(count > 1) {
-                leaf = cursor;
-                leaf_char = c;
-            }
+        // else navigate to next child       
+        cursor = cursor->children[c - 'a'];
 
-            cursor = cursor->children[c - 'a'];
+        // save node to path array
+        path[path_index++] = cursor;
+    }
+
+    // Key was not found
+    if(cursor->word_count == 0) return false;
+    
+    // If key was found decrement word count
+    cursor->word_count--;
+
+    // If key is no longer the end of a word, evaluate condition for deletion
+    if(cursor->word_count == 0) {
+        // Iterate over path array
+        for(int i = path_index - 1; i > 0; i--) {
+            TrieNode* current = path[i];
+            TrieNode* parent = path[i-1];
+            char c = key[i-1];
+            
+            bool hasOtherChildren = false;
+            
+            // Evaluate path nodes one by one for child nodes
+            for(int j = 0; j < N; j++) {
+                if(current->children[j] != nullptr) {
+                    hasOtherChildren = true;
+                    break;
+                }
+            }
+            
+            // Delete nodes only if path is not a prefix for other words and
+            // is not the end of a keyword in the Trie
+            if(!hasOtherChildren && current->word_count == 0) {
+                delete current;
+                parent->children[c - 'a'] = nullptr;
+            } else {
+                break;
+            }
         }
     }
 
-    int count = 0;
-    for (int i = 0; i < N; i++) {
-        if(cursor->children[i] != nullptr) count++;
-    }
-
-    if(count > 0) {
-        cursor->word_count--;
-        return true;
-    }
-
-    if(leaf != nullptr) {
-        free_node(leaf->children[leaf_char]);
-        return true;
-    }
-
-    else {
-        free_node(root->children[key[0]]);
-        return true;
-    }
+    return true;
 }
 
 // Search function
-bool search(TrieNode*root, string key) {
+bool Tries::search(TrieNode*root, string key) {
     // initialize pointer to root
     TrieNode* cursor = root;
 
@@ -115,7 +141,7 @@ bool search(TrieNode*root, string key) {
     return (cursor->word_count > 0);
 }
 
-bool pre_search(TrieNode* root, string key) {
+bool Tries::pre_search(TrieNode* root, string key) {
     // initialize pointer to root
     TrieNode* cursor = root;
 
