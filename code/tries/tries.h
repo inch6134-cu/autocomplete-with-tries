@@ -41,11 +41,7 @@ class Tries {
     // Prefix Search
     bool pre_search(TrieNode* root, string key);
 
-    private:
     TrieNode* root;
-    friend void test_insert_and_search();
-    friend void test_prefix_search();
-    friend void test_delete();
 
     // Initialize Trie Node
     TrieNode* make_node();

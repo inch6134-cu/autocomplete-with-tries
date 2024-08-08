@@ -1,4 +1,4 @@
-#include "../code/tries.h"
+#include "../code/tries/tries.h"
 #include <cassert>
 #include <iostream>
 
