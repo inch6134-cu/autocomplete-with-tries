@@ -47,7 +47,7 @@ void printCurrentStateAndSuggestions() {
     for (const auto& suggestion : suggestions) {
         cout << suggestion.word << " (" << suggestion.frequency << ")" << endl;
     }
-    cout << endl << "Type to search, 'q' to quit" << endl;
+    cout << endl << "Type to search, 'ESC' to quit" << endl;
     
     moveCursor(15 + currentInput.length(), 1);  // Move cursor back to end of input
     cout << flush;
@@ -58,7 +58,7 @@ void inputThread() {
     printCurrentStateAndSuggestions();  // Initial print
     while (running) {
         char c = cin.get();
-        if (c == 'q') {
+        if (c == 27) { // ASCII 27 is the escape key
             running = false;
         } else if (c == 127) {  // Backspace
             if (!currentInput.empty()) {
@@ -79,7 +79,7 @@ int main() {
 
     cout << "Loading dictionary..." << endl;
     engine->loadDictionaryFromFile("dictionary.txt");
-    cout << "Dictionary loaded. Press enter to start..." << endl;
+    cout << "Dictionary loaded. Press enter to start" << endl;
     cin.get();  // Wait for user input before clearing screen
 
     clearScreen();
