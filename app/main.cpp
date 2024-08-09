@@ -1,40 +1,92 @@
 #include <iostream>
-
+#include <thread>
+#include <atomic>
+#include <chrono>
+#include <termios.h>
+#include <unistd.h>
 #include "../code/tries/tries.h"
 #include "../code/autocomplete/autocomplete_engine.h"
 
 using namespace std;
 
+atomic<bool> running(true);
+string currentInput = "";
+AutocompleteEngine* engine;
+
+termios orig_termios;
+
+void disableRawMode() {
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
+}
+
+void enableRawMode() {
+    tcgetattr(STDIN_FILENO, &orig_termios);
+    atexit(disableRawMode);
+    termios raw = orig_termios;
+    raw.c_lflag &= ~(ECHO | ICANON);
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+}
+
+void clearScreen() {
+    cout << "\033[2J\033[H" << flush;
+}
+
+void moveCursor(int x, int y) {
+    cout << "\033[" << y << ";" << x << "H" << flush;
+}
+
+void printCurrentStateAndSuggestions() {
+    clearScreen();
+    cout << "Current input: " << currentInput;
+    moveCursor(15 + currentInput.length(), 1);  // Move cursor to end of input
+    cout << flush;
+    
+    moveCursor(1, 3);  // Move to third line for suggestions
+    auto suggestions = engine->suggest(currentInput);
+    cout << "Suggestions:" << endl;
+    for (const auto& suggestion : suggestions) {
+        cout << suggestion.word << " (" << suggestion.frequency << ")" << endl;
+    }
+    cout << endl << "Type to search, 'q' to quit" << endl;
+    
+    moveCursor(15 + currentInput.length(), 1);  // Move cursor back to end of input
+    cout << flush;
+}
+
+void inputThread() {
+    enableRawMode();
+    printCurrentStateAndSuggestions();  // Initial print
+    while (running) {
+        char c = cin.get();
+        if (c == 'q') {
+            running = false;
+        } else if (c == 127) {  // Backspace
+            if (!currentInput.empty()) {
+                currentInput.pop_back();
+                printCurrentStateAndSuggestions();
+            }
+        } else if (c >= 32 && c < 127) {  // Printable characters
+            currentInput += c;
+            printCurrentStateAndSuggestions();
+        }
+    }
+    disableRawMode();
+}
+
 int main() {
     Tries* trie = new Tries();
-    AutocompleteEngine engine(trie);
+    engine = new AutocompleteEngine(trie);
 
-    // Preload some words
-    vector<pair<string, int>> words = {
-        {"apple", 5}, {"application", 10}, {"banana", 3}, {"book", 7},
-        {"cat", 4}, {"dog", 8}, {"elephant", 2}, {"function", 6}
-    };
+    cout << "Loading dictionary..." << endl;
+    engine->loadDictionaryFromFile("dictionary.txt");
+    cout << "Dictionary loaded. Press enter to start..." << endl;
+    cin.get();  // Wait for user input before clearing screen
 
-    for (auto& [word, freq] : words) {
-        engine.insert(word, freq);
-    }
+    clearScreen();
+    thread input(inputThread);
+    input.join();
 
-    while (true) {
-        string input;
-        cout << "Enter a prefix (or 'quit' to exit): ";
-        cin >> input;
-
-        if (input == "quit") break;
-
-        auto suggestions = engine.suggest(input);
-
-        cout << "Suggestions:" << endl;
-        for (const auto& suggestion : suggestions) {
-            cout << suggestion.word << " (freq: " << suggestion.frequency << ")" << endl;
-        }
-        cout << endl;
-    }
-
+    delete engine;
     delete trie;
     return 0;
 }

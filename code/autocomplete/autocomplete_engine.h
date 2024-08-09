@@ -3,6 +3,8 @@
 
 #include <string>
 #include <vector>
+#include <fstream>
+
 #include "../tries/tries.h"
 
 using namespace std;
@@ -18,10 +20,13 @@ public:
     vector<SuggestedWord> suggest(string& prefix, int limit = 10, int maxDistance = 1);
     void insert(string& key, int freq = 1);
     void remove(string& key);
+    void loadDictionaryFromFile(const string& filename);
 
 private:
     Tries* trie;
     int levenshteinDistance(const string& s1, const string& s2);
+    int matchingPrefixLength(const string& s1, const string& s2);
+    double scoreWord(const string& word, const string& prefix, int frequency);
 };
 
 #endif  // AUTOCOMPLETE_ENGINE_H

@@ -45,7 +45,7 @@ void Tries::insert_node(TrieNode* root, string key, int freq = 1) {
 
     // iterate over key
     for(auto c : key) {
-        int index = c - 'a';
+        int index = tolower(c) - 'a';
         // check if a node exists for current character
         if(cursor->children[index] == nullptr) {
             // create new node if character doesn't exist

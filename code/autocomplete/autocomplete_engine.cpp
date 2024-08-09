@@ -1,11 +1,17 @@
 #include "autocomplete_engine.h"
 #include <algorithm>
 #include <queue>
+#include <cmath>
+#include <iostream>
 
 using namespace std;
 
 
 vector<SuggestedWord> AutocompleteEngine::suggest(string& prefix, int limit = 10, int maxDistance = 1) {
+    if (prefix.empty()) {
+        return {};  // Return an empty vector for empty prefix
+    }
+    
     vector<SuggestedWord> suggestions;
     string lowercasePrefix = prefix;
     transform(lowercasePrefix.begin(), lowercasePrefix.end(), lowercasePrefix.begin(), ::tolower);
@@ -13,7 +19,7 @@ vector<SuggestedWord> AutocompleteEngine::suggest(string& prefix, int limit = 10
     queue<pair<TrieNode*, string>> nodeQueue;
     nodeQueue.push({trie->root, ""});
 
-    while (!nodeQueue.empty() && suggestions.size() < limit) {
+    while (!nodeQueue.empty() && suggestions.size() < limit * 2) { // collect more suggestions initially
         auto [currentNode, currentWord] = nodeQueue.front();
         nodeQueue.pop();
 
@@ -38,16 +44,48 @@ vector<SuggestedWord> AutocompleteEngine::suggest(string& prefix, int limit = 10
         }
     }
 
-    // Sort suggestions based on edit distance and frequency
+    // Sort suggestions based on our custom scoring function
     sort(suggestions.begin(), suggestions.end(), 
          [&](const SuggestedWord& a, const SuggestedWord& b) {
-             int distA = levenshteinDistance(a.word.substr(0, min(a.word.length(), lowercasePrefix.length())), lowercasePrefix);
-             int distB = levenshteinDistance(b.word.substr(0, min(b.word.length(), lowercasePrefix.length())), lowercasePrefix);
-             if (distA != distB) return distA < distB;
-             return a.frequency > b.frequency;
+             double scoreA = scoreWord(a.word, lowercasePrefix, a.frequency);
+             double scoreB = scoreWord(b.word, lowercasePrefix, b.frequency);
+             return scoreA > scoreB;
          });
     
+    // Limit the number of suggestions after sorting
+    if (suggestions.size() > limit) {
+        suggestions.resize(limit);
+    }
+
     return suggestions;
+}
+
+
+void AutocompleteEngine::insert(string& key, int freq) {
+    string lowercaseKey = key;
+    transform(lowercaseKey.begin(), lowercaseKey.end(), lowercaseKey.begin(), ::tolower);
+    // Use the Trie's insert_node() function to add the word to the Trie
+    trie->insert_node(trie->root, lowercaseKey, freq);
+}
+
+void AutocompleteEngine::remove(string& key) {
+    // Use the Trie's delete_node() function to remove the word from the Trie
+    trie->delete_node(trie->root, key);
+}
+
+void AutocompleteEngine::loadDictionaryFromFile(const string& filename) {
+    ifstream file(filename);
+    string word;
+    int frequency;
+
+    if (file.is_open()) {
+        while (file >> word >> frequency) {
+            insert(word, frequency);
+        }
+        file.close();
+    } else {
+        cerr << "Unable to open file: " << filename << endl;
+    }
 }
 
 // helper function to calculate Levenshtein distance for fuzzy match
@@ -71,14 +109,21 @@ int AutocompleteEngine::levenshteinDistance(const string& s1, const string& s2) 
     return dp[s1.length()][s2.length()];
 }
 
-void AutocompleteEngine::insert(string& key, int freq) {
-    string lowercaseKey = key;
-    transform(lowercaseKey.begin(), lowercaseKey.end(), lowercaseKey.begin(), ::tolower);
-    // Use the Trie's insert_node() function to add the word to the Trie
-    trie->insert_node(trie->root, lowercaseKey, freq);
+// helper function to calculate the number of matching characters at the beginning
+int AutocompleteEngine::matchingPrefixLength(const string& s1, const string& s2) {
+    int i = 0;
+    while (i < s1.length() && i < s2.length() && s1[i] == s2[i]) {
+        i++;
+    }
+    return i;
 }
 
-void AutocompleteEngine::remove(string& key) {
-    // Use the Trie's delete_node() function to remove the word from the Trie
-    trie->delete_node(trie->root, key);
+// scoring function
+double AutocompleteEngine::scoreWord(const string& word, const string& prefix, int frequency) {
+    int matchLength = matchingPrefixLength(word, prefix);
+    int distance = levenshteinDistance(word.substr(0, prefix.length()), prefix);
+    
+    // Scoring formula: prioritize matching prefix, then consider edit distance and frequency
+    double score = 1000 * matchLength - 10 * distance + log(frequency + 1);
+    return score;
 }
