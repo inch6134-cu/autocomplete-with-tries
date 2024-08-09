@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <unordered_map>
 
 #include "../tries/tries.h"
 
@@ -24,9 +25,8 @@ public:
 
 private:
     Tries* trie;
-    void dfs(TrieNode* node, string currentWord, const string& prefix, int maxDistance, int limit, 
+    void dfs(TrieNode* node, string currentWord, const string& prefix, int maxDistance, int limit,
              vector<SuggestedWord>& suggestions, unordered_map<string, int>& seenSuggestions);
-
     int levenshteinDistance(const string& s1, const string& s2);
     int matchingPrefixLength(const string& s1, const string& s2);
     double scoreWord(const string& word, const string& prefix, int frequency);

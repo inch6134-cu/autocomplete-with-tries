@@ -39,7 +39,7 @@ void Tries::free_node (TrieNode* node) {
 }
 
 // Insert function
-void Tries::insert_node(TrieNode* root, string key, int freq = 1) {
+void Tries::insert_node(TrieNode* root, string key, int freq) {
     // initialize pointer to root
     TrieNode* cursor = root;
 

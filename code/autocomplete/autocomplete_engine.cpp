@@ -8,7 +8,7 @@
 using namespace std;
 
 
-vector<SuggestedWord> AutocompleteEngine::suggest(const string& prefix, int limit = 10, int maxDistance = 2) {
+vector<SuggestedWord> AutocompleteEngine::suggest(const string& prefix, int limit, int maxDistance) {
     if (prefix.empty()) {
         return {};  // Return an empty vector for empty prefix
     }
@@ -65,7 +65,7 @@ void AutocompleteEngine::loadDictionaryFromFile(const string& filename) {
 }
 
  void AutocompleteEngine::dfs(TrieNode* node, string currentWord, const string& prefix, int maxDistance, int limit, 
-             vector<SuggestedWord>& suggestions, unordered_map<string, int>& seenSuggestions) {
+         vector<SuggestedWord>& suggestions, unordered_map<string, int>& seenSuggestions) {
         if (suggestions.size() >= limit) return;
         
         if (node->is_end_of_word) {
