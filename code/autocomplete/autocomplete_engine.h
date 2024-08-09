@@ -15,14 +15,13 @@ struct SuggestedWord {
 class AutocompleteEngine {
 public:
     AutocompleteEngine(Tries* trie) : trie(trie) {};
-    vector<SuggestedWord> suggest(string& prefix, int limit = 10);
-    void suggestHelper(TrieNode* node, string& prefix, string currentWord, vector<SuggestedWord>& suggestions);
-    void collectWords(TrieNode* node, string& prefix, string currentWord, vector<SuggestedWord>& suggestions);
+    vector<SuggestedWord> suggest(string& prefix, int limit = 10, int maxDistance = 1);
     void insert(string& key, int freq = 1);
     void remove(string& key);
 
 private:
     Tries* trie;
+    int levenshteinDistance(const string& s1, const string& s2);
 };
 
 #endif  // AUTOCOMPLETE_ENGINE_H

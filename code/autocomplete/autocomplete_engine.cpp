@@ -4,122 +4,71 @@
 
 using namespace std;
 
-// vector<SuggestedWord> AutocompleteEngine::suggest(string& prefix, int limit) {
-//     // Implement the autocomplete logic using the Trie data structure
-//     // and return the suggested words as a vector of strings
-//     vector<SuggestedWord> suggestions;
-//     TrieNode* node = trie->root;
-//     for (char c : prefix) {
-//         int index;
-//         if (isupper(c)) {
-//             index = c - 'A' + 26;
-//         } else {
-//             index = c - 'a';
-//         }
-//         if (node->children[index] == nullptr) {
-//             return suggestions;  // Prefix not found, return empty vector
-//         }
-//         node = node->children[index];
-//     }
 
-//     suggestHelper(trie->root, prefix, prefix, suggestions);
-
-//      // Sort suggestions based on frequency
-//     sort(suggestions.begin(), suggestions.end(), 
-//          [](const SuggestedWord& a, const SuggestedWord& b) {
-//              return a.frequency > b.frequency;
-//          });
-    
-//     // Limit the number of suggestions
-//     if (suggestions.size() > limit) {
-//         suggestions.resize(limit);
-//     }
-
-//     return suggestions;
-// }
-
-// Iterative approach with stack, no helper functions
-
-vector<SuggestedWord> AutocompleteEngine::suggest(string& prefix, int limit = 10) {
+vector<SuggestedWord> AutocompleteEngine::suggest(string& prefix, int limit = 10, int maxDistance = 1) {
     vector<SuggestedWord> suggestions;
     string lowercasePrefix = prefix;
     transform(lowercasePrefix.begin(), lowercasePrefix.end(), lowercasePrefix.begin(), ::tolower);
     
-    // Check if the prefix exists in the Trie
-    TrieNode* node = trie->root;
-    for (char c : lowercasePrefix) {
-        int index = c - 'a';
-        if (node->children[index] == nullptr) {
-            return suggestions;  // Prefix not found, return empty vector
-        }
-        node = node->children[index];
-    }
-    
-    // Use a queue for depth-first search
     queue<pair<TrieNode*, string>> nodeQueue;
-    nodeQueue.push({node, lowercasePrefix});
+    nodeQueue.push({trie->root, ""});
 
     while (!nodeQueue.empty() && suggestions.size() < limit) {
         auto [currentNode, currentWord] = nodeQueue.front();
         nodeQueue.pop();
 
         if (currentNode->is_end_of_word) {
-            auto it = find_if(suggestions.begin(), suggestions.end(),
-                [&currentWord](const SuggestedWord& sw) { return sw.word == currentWord; });
-            if (it != suggestions.end()) {
-                it->frequency = max(it->frequency, currentNode->frequency);
-            } else {
+            int distance = levenshteinDistance(currentWord.substr(0, min(currentWord.length(), lowercasePrefix.length())), lowercasePrefix);
+            if (distance <= maxDistance) {
                 suggestions.push_back({currentWord, currentNode->frequency});
-            }        }
+            }
+        }
 
         for (int i = 0; i < 26; i++) {
             if (currentNode->children[i]) {
                 char nextChar = static_cast<char>(i + 'a');
-                nodeQueue.push({currentNode->children[i], currentWord + nextChar});
+                string newWord = currentWord + nextChar;
+                
+                // Prune branches that exceed the maximum allowed distance
+                if (newWord.length() <= lowercasePrefix.length() || 
+                    levenshteinDistance(newWord.substr(0, lowercasePrefix.length()), lowercasePrefix) <= maxDistance) {
+                    nodeQueue.push({currentNode->children[i], newWord});
+                }
             }
         }
     }
 
-    
-    // Sort suggestions based on frequency
+    // Sort suggestions based on edit distance and frequency
     sort(suggestions.begin(), suggestions.end(), 
-         [](const SuggestedWord& a, const SuggestedWord& b) {
+         [&](const SuggestedWord& a, const SuggestedWord& b) {
+             int distA = levenshteinDistance(a.word.substr(0, min(a.word.length(), lowercasePrefix.length())), lowercasePrefix);
+             int distB = levenshteinDistance(b.word.substr(0, min(b.word.length(), lowercasePrefix.length())), lowercasePrefix);
+             if (distA != distB) return distA < distB;
              return a.frequency > b.frequency;
          });
     
     return suggestions;
 }
 
-void AutocompleteEngine::suggestHelper(TrieNode* node, string& prefix, string currentWord, vector<SuggestedWord>& suggestions) {
-  // Check if the prefix exists in the Trie
-    if (!trie->pre_search(node, prefix)) {
-        return;
-    }
+// helper function to calculate Levenshtein distance for fuzzy match
+int AutocompleteEngine::levenshteinDistance(const string& s1, const string& s2) {
+    vector<vector<int>> dp(s1.length() + 1, vector<int>(s2.length() + 1, 0));
 
-    TrieNode* prefixNode = node;
-    for (char c : prefix) {
-        prefixNode = prefixNode->children[c - 'a'];
-    }
-
-    // Traverse the Trie and collect all words that start with the given prefix
-    collectWords(node, prefix, currentWord, suggestions);
-}
-
-void AutocompleteEngine::collectWords(TrieNode* node, string& prefix, string currentWord, vector<SuggestedWord>& suggestions) {
-    if (node->is_end_of_word) {
-        suggestions.push_back({currentWord, node->frequency});
-    }
-    for (int i = 0; i < N; i++) {
-        if (node->children[i] != nullptr) {
-            char nextChar;
-            if (i < 26) {
-                nextChar = static_cast<char>(i + 'a');
+    for (int i = 0; i <= s1.length(); i++) {
+        for (int j = 0; j <= s2.length(); j++) {
+            if (i == 0) {
+                dp[i][j] = j;
+            } else if (j == 0) {
+                dp[i][j] = i;
+            } else if (s1[i - 1] == s2[j - 1]) {
+                dp[i][j] = dp[i - 1][j - 1];
             } else {
-                nextChar = static_cast<char>(i - 26 + 'A');
+                dp[i][j] = 1 + min({dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]});
             }
-            collectWords(node->children[i], prefix, currentWord + nextChar, suggestions);
         }
     }
+
+    return dp[s1.length()][s2.length()];
 }
 
 void AutocompleteEngine::insert(string& key, int freq) {
