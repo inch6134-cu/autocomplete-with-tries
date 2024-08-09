@@ -5,14 +5,7 @@
 
 using namespace std;
 
-
-// Trie is a N-ary tree that can hold all standard ASCII characters
-// excluding 32 non-printing characters
-// TODO: Implement full support for ASCII ex. non-printing characters
-// #define N 127 - 32
-
-// NOTE: First implementation will only include lowercase alphabet
-#define N 26
+#define N 52 // 26 uppercase + 26 lowercase
 
 // define Trie Node struct
 typedef struct TrieNode TrieNode;
@@ -20,7 +13,8 @@ typedef struct TrieNode TrieNode;
 // Trie Node structure with N children and a counter to check if node is key
 struct TrieNode {
     TrieNode* children[N];
-    int word_count;
+    bool is_end_of_word;
+    int frequency;
 };
 
 class Tries {
@@ -30,7 +24,7 @@ class Tries {
 
 
     // Insert function
-    void insert_node(TrieNode* root, string key);
+    void insert_node(TrieNode* root, string key, int freq = 1);
 
     // Delete function
     bool delete_node(TrieNode* root, string key);

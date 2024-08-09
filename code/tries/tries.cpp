@@ -19,7 +19,8 @@ TrieNode* Tries::make_node() {
     for (int i = 0; i < N; i++) {
         node->children[i] = nullptr;
     }
-    node->word_count = 0;
+    node->is_end_of_word = false;
+    node->frequency = 0;
     return node;
 }
 
@@ -38,23 +39,25 @@ void Tries::free_node (TrieNode* node) {
 }
 
 // Insert function
-void Tries::insert_node(TrieNode* root, string key) {
+void Tries::insert_node(TrieNode* root, string key, int freq = 1) {
     // initialize pointer to root
     TrieNode* cursor = root;
 
     // iterate over key
     for(auto c : key) {
+        int index = c - 'a';
         // check if a node exists for current character
-        if(cursor->children[c - 'a'] == nullptr) {
+        if(cursor->children[index] == nullptr) {
             // create new node if character doesn't exist
-            cursor->children[c - 'a'] = make_node();
+            cursor->children[index] = make_node();
         }
         // move pointer to new node
-        cursor = cursor->children[c - 'a'];
+        cursor = cursor->children[index];
     }
 
     // once loop terminates this implies a string ends at the current node
-    cursor->word_count++;
+    cursor->is_end_of_word = true;
+    cursor->frequency = freq;
 }
 
 // Delete function
@@ -72,24 +75,24 @@ bool Tries::delete_node(TrieNode* root, string key) {
 
     // iterate over key
     for(auto c : key) {
+        int index = tolower(c) - 'a';
         // if path does not exist return false
-        if(cursor->children[c - 'a'] == nullptr) return false;
+        if(cursor->children[index] == nullptr) return false;
 
         // else navigate to next child       
-        cursor = cursor->children[c - 'a'];
+        cursor = cursor->children[index];
 
         // save node to path array
         path[path_index++] = cursor;
     }
 
-    // Key was not found
-    if(cursor->word_count == 0) return false;
+    // If key was found mark as not end of word and reset frequency
+    if (cursor->is_end_of_word) {
+        cursor->is_end_of_word = false;
+    }
     
-    // If key was found decrement word count
-    cursor->word_count--;
-
     // If key is no longer the end of a word, evaluate condition for deletion
-    if(cursor->word_count == 0) {
+    if(!cursor->is_end_of_word) {
         // Iterate over path array
         for(int i = path_index - 1; i > 0; i--) {
             TrieNode* current = path[i];
@@ -108,9 +111,10 @@ bool Tries::delete_node(TrieNode* root, string key) {
             
             // Delete nodes only if path is not a prefix for other words and
             // is not the end of a keyword in the Trie
-            if(!hasOtherChildren && current->word_count == 0) {
+            if(!hasOtherChildren && !current->is_end_of_word) {
                 delete current;
-                parent->children[c - 'a'] = nullptr;
+                int index = tolower(c) - 'a';
+                parent->children[index] = nullptr;
             } else {
                 break;
             }
@@ -127,18 +131,19 @@ bool Tries::search(TrieNode*root, string key) {
 
     // iterate over key
     for(auto c : key) {
+        int index = tolower(c) - 'a';
         // check if a node exists for current character
-        if(cursor->children[c - 'a'] == nullptr) {
+        if(cursor->children[index] == nullptr) {
             // return false if character doesn't exist
             return false;
         }
         // move pointer to next existing node in Trie
-        cursor = cursor->children[c - 'a'];
+        cursor = cursor->children[index];
     }
 
-    // returns true if word exists and is marked as a complete word
-    // returns false if complete word is not found in Trie
-    return (cursor->word_count > 0);
+    // returns true if word exists
+    // returns false if word is not found in Trie
+    return cursor->is_end_of_word;
 }
 
 bool Tries::pre_search(TrieNode* root, string key) {
@@ -147,13 +152,14 @@ bool Tries::pre_search(TrieNode* root, string key) {
 
     // iterate over key
     for(auto c : key) {
+        int index = tolower(c) - 'a';
         // check if a node exists for current character
-        if(cursor->children[c - 'a'] == nullptr) {
+        if(cursor->children[index] == nullptr) {
             // return false if character doesn't exist
             return false;
         }
         // move pointer to next existing node in Trie
-        cursor = cursor->children[c - 'a'];
+        cursor = cursor->children[index];
     }
 
     // prefix exists in tree, return true

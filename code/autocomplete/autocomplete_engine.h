@@ -7,13 +7,18 @@
 
 using namespace std;
 
+struct SuggestedWord {
+    string word;
+    int frequency;
+};
+
 class AutocompleteEngine {
 public:
     AutocompleteEngine(Tries* trie) : trie(trie) {};
-    vector<string> suggest(string& prefix);
-    void suggestHelper(TrieNode* node, string& prefix, string currentWord, vector<string>& suggestions);
-    void collectWords(TrieNode* node, string& prefix, string currentWord, vector<string>& suggestions);
-    void insert(string& key);
+    vector<SuggestedWord> suggest(string& prefix, int limit = 10);
+    void suggestHelper(TrieNode* node, string& prefix, string currentWord, vector<SuggestedWord>& suggestions);
+    void collectWords(TrieNode* node, string& prefix, string currentWord, vector<SuggestedWord>& suggestions);
+    void insert(string& key, int freq = 1);
     void remove(string& key);
 
 private:
