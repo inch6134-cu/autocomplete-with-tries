@@ -4,14 +4,13 @@
 #include <chrono>
 #include <termios.h>
 #include <unistd.h>
-#include "../code/tries/tries.h"
+#include <iomanip>
+
 #include "../code/autocomplete/autocomplete_engine.h"
 
-using namespace std;
-
-atomic<bool> running(true);
-string currentInput = "";
-AutocompleteEngine* engine;
+std::atomic<bool> running(true);
+std::string currentInput = "";
+std::unique_ptr<AutocompleteEngine> engine;
 
 termios orig_termios;
 
@@ -28,36 +27,46 @@ void enableRawMode() {
 }
 
 void clearScreen() {
-    cout << "\033[2J\033[H" << flush;
+    std::cout << "\033[2J\033[H" << std::flush;
 }
 
 void moveCursor(int x, int y) {
-    cout << "\033[" << y << ";" << x << "H" << flush;
+    std::cout << "\033[" << y << ";" << x << "H" << std::flush;
 }
 
 void printCurrentStateAndSuggestions() {
     clearScreen();
-    cout << "Current input: " << currentInput;
+    std::cout << "Current input: " << currentInput;
     moveCursor(15 + currentInput.length(), 1);  // Move cursor to end of input
-    cout << flush;
+    std::cout << std::flush;
     
     moveCursor(1, 3);  // Move to third line for suggestions
     auto suggestions = engine->suggest(currentInput);
-    cout << "Suggestions:" << endl;
+    std::cout << "Suggestions:" << std::endl;
     for (const auto& suggestion : suggestions) {
-        cout << suggestion.word << " (" << suggestion.frequency << ")" << endl;
+        std::cout << suggestion.word << " (";
+        if (suggestion.frequency >= 1e9) {
+            std::cout << std::fixed << std::setprecision(3) << suggestion.frequency / 1e9 << "B";
+        } else if (suggestion.frequency >= 1e6) {
+            std::cout << std::fixed << std::setprecision(3) << suggestion.frequency / 1e6 << "M";
+        } else if (suggestion.frequency >= 1e3) {
+            std::cout << std::fixed << std::setprecision(3) << suggestion.frequency / 1e3 << "K";
+        } else {
+            std::cout << std::fixed << std::setprecision(0) << suggestion.frequency;
+        }
+        std::cout << ")" << std::endl;
     }
-    cout << endl << "Type to search, 'ESC' to quit" << endl;
+    std::cout << std::endl << "Type to search, 'ESC' to quit" << std::endl;
     
     moveCursor(15 + currentInput.length(), 1);  // Move cursor back to end of input
-    cout << flush;
+    std::cout << std::flush;
 }
 
 void inputThread() {
     enableRawMode();
     printCurrentStateAndSuggestions();  // Initial print
     while (running) {
-        char c = cin.get();
+        char c = std::cin.get();
         if (c == 27) { // ASCII 27 is the escape key
             running = false;
         } else if (c == 127) {  // Backspace
@@ -74,19 +83,16 @@ void inputThread() {
 }
 
 int main() {
-    Tries* trie = new Tries();
-    engine = new AutocompleteEngine(trie);
+    engine = std::make_unique<AutocompleteEngine>();
 
-    cout << "Loading dictionary..." << endl;
+    std::cout << "Loading dictionary..." << std::endl;
     engine->loadDictionaryFromFile("dictionary.txt");
-    cout << "Dictionary loaded. Press enter to start" << endl;
-    cin.get();  // Wait for user input before clearing screen
+    std::cout << "Dictionary loaded. Press enter to start" << std::endl;
+    std::cin.get();  // Wait for user input before clearing screen
 
     clearScreen();
-    thread input(inputThread);
+    std::thread input(inputThread);
     input.join();
 
-    delete engine;
-    delete trie;
     return 0;
 }

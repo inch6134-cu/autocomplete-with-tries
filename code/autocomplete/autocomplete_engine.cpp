@@ -1,6 +1,5 @@
 #include "autocomplete_engine.h"
 #include <algorithm>
-#include <queue>
 #include <cmath>
 #include <iostream>
 #include <unordered_map>
@@ -16,11 +15,12 @@ vector<SuggestedWord> AutocompleteEngine::suggest(const string& prefix, int limi
     vector<SuggestedWord> suggestions;
     string lowercasePrefix = toLower(prefix); // convert string to lowercase
     
-    queue<pair<TrieNode*, string>> nodeQueue;
-    nodeQueue.push({trie->root, ""});
-
     unordered_map<string, int> seenSuggestions;
-    dfs(trie->root, "", lowercasePrefix, maxDistance, limit, suggestions, seenSuggestions);
+    const TrieNode* startNode = trie->get_node(lowercasePrefix);
+
+    if(startNode) {
+        dfs(startNode, lowercasePrefix, lowercasePrefix, maxDistance, limit, suggestions, seenSuggestions);
+    }
 
     // Sort suggestions based on our custom scoring function
     sort(suggestions.begin(), suggestions.end(), 
@@ -38,21 +38,16 @@ vector<SuggestedWord> AutocompleteEngine::suggest(const string& prefix, int limi
 }
 
 
-void AutocompleteEngine::insert(string& key, int freq) {
+void AutocompleteEngine::insert(string& key, double freq) {
     string lowercaseKey = toLower(key);
     // Use the Trie's insert_node() function to add the word to the Trie
-    trie->insert_node(trie->root, lowercaseKey, freq);
-}
-
-void AutocompleteEngine::remove(string& key) {
-    // Use the Trie's delete_node() function to remove the word from the Trie
-    trie->delete_node(trie->root, key);
+    trie->insert_node(lowercaseKey, freq);
 }
 
 void AutocompleteEngine::loadDictionaryFromFile(const string& filename) {
     ifstream file(filename);
     string word;
-    int frequency;
+    double frequency;
 
     if (file.is_open()) {
         while (file >> word >> frequency) {
@@ -64,7 +59,7 @@ void AutocompleteEngine::loadDictionaryFromFile(const string& filename) {
     }
 }
 
- void AutocompleteEngine::dfs(TrieNode* node, string currentWord, const string& prefix, int maxDistance, int limit, 
+ void AutocompleteEngine::dfs(const TrieNode* node, string currentWord, const string& prefix, int maxDistance, int limit, 
          vector<SuggestedWord>& suggestions, unordered_map<string, int>& seenSuggestions) {
         if (suggestions.size() >= limit) return;
         
@@ -83,7 +78,7 @@ void AutocompleteEngine::loadDictionaryFromFile(const string& filename) {
                 
                 if (newWord.length() <= prefix.length() || 
                     levenshteinDistance(newWord.substr(0, prefix.length()), prefix) <= maxDistance) {
-                    dfs(node->children[i], newWord, prefix, maxDistance, limit, suggestions, seenSuggestions);
+                    dfs(node->children[i].get(), newWord, prefix, maxDistance, limit, suggestions, seenSuggestions);
                 }
             }
         }
@@ -121,7 +116,7 @@ int AutocompleteEngine::matchingPrefixLength(const string& s1, const string& s2)
 }
 
 // scoring function
-double AutocompleteEngine::scoreWord(const string& word, const string& prefix, int frequency) {
+double AutocompleteEngine::scoreWord(const string& word, const string& prefix, double frequency) {
     int matchLength = matchingPrefixLength(word, prefix);
     int distance = levenshteinDistance(word.substr(0, prefix.length()), prefix);
     

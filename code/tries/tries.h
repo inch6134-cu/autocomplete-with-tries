@@ -2,46 +2,37 @@
 #define TRIES_H__
 
 #include <string>
+#include <array>
+#include <memory>
 
 using namespace std;
 
-#define N 52 // 26 uppercase + 26 lowercase
-
-// define Trie Node struct
-typedef struct TrieNode TrieNode;
-
-// Trie Node structure with N children and a counter to check if node is key
-struct TrieNode {
-    TrieNode* children[N];
-    bool is_end_of_word;
-    int frequency;
+ struct TrieNode {
+        array<unique_ptr<TrieNode>, 26> children = {};
+        bool is_end_of_word = false;
+        double frequency = 0.0;
 };
 
 class Tries {
+    private:
+    unique_ptr<TrieNode> root;
+
+    // Prefix Search
+    const TrieNode* pre_search(const string& prefix) const;
+    
     public:
-    Tries();
-    ~Tries();
+    Tries() : root(make_unique<TrieNode>()) {}
 
 
     // Insert function
-    void insert_node(TrieNode* root, string key, int freq = 1);
-
-    // Delete function
-    bool delete_node(TrieNode* root, string key);
+    void insert_node(const string& key, double freq);
 
     // Search function
-    bool search(TrieNode* root, string key);
+    bool search(const string& key) const;
 
-    // Prefix Search
-    bool pre_search(TrieNode* root, string key);
+    bool starts_with(const string& prefix) const;
 
-    TrieNode* root;
-
-    // Initialize Trie Node
-    TrieNode* make_node();
-
-    // Free Trie Node
-    void free_node (TrieNode* node);
+    const TrieNode* get_node(const string& prefix) const;
 };
 
 
