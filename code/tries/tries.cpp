@@ -8,7 +8,7 @@ const TrieNode* Tries::pre_search(const string& prefix) const {
 
     // iterate over key
     for(char c : prefix) {
-        int index = c - 'a';
+        int index = tolower(c) - 'a';
         // check if a node exists for current character
         if(index < 0 || index >= 26 || !cursor->children[index]) {
             // return false if character doesn't exist
@@ -29,7 +29,8 @@ void Tries::insert_node(const string& key, double freq) {
 
     // iterate over key
     for(char c : key) {
-        int index = c - 'a';
+        int index = tolower(c) - 'a';
+        if(index < 0 || index >= 26) continue;  // Skip non-alphabetic characters
         // check if a node exists for current character
         if(!cursor->children[index]) {
             // create new node if character doesn't exist

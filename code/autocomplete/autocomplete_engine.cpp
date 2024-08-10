@@ -127,6 +127,6 @@ double AutocompleteEngine::scoreWord(const string& word, const string& prefix, d
 
 string AutocompleteEngine::toLower(const string& s) {
         string result = s;
-        transform(result.begin(), result.end(), result.begin(), ::tolower);
+        transform(result.begin(), result.end(), result.begin(), [](unsigned char c) {return tolower(c);});
         return result;
 }

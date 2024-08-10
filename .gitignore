@@ -1,6 +1,48 @@
-# exclude everything
-build/*
-ipch
+# Compiled object files
+*.o
+*.obj
 
-# exception to the rule
-!build/.gitkeep 
+# Compiled dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled static libraries
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+autocomplete
+
+# Build directories
+build/*
+bin/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Dependency directories
+# Uncomment if you're using any package managers
+# node_modules/
+# vendor/
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
