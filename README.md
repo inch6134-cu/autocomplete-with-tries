@@ -27,7 +27,7 @@ A Trie (pronounced "try") is a tree-like data structure used to store and retrie
 
 1. Ensure you have a C++ compiler installed (e.g., g++).
 2. Clone the repository to your local machine.
-3. Navigate to the build directory and make sure you have a dictionary saved as 'dictionary.txt'. The dictionary must have one word and one frequency number in each line, space delimited. (You copy the dictionary.txt in the root folder into the build folder for demo purposes. Source: https://www.kaggle.com/datasets/rtatman/english-word-frequency?resource=download)
+3. Navigate to the build directory and make sure you have a dictionary saved as 'dictionary.txt'. The dictionary must have one word and one frequency number in each line, space delimited. (You can copy the dictionary.txt in the root folder into the build folder for demo purposes. Source: https://www.kaggle.com/datasets/rtatman/english-word-frequency?resource=download)
 4. Compile the project:
    ```
    g++ -std=c++17 ../app/main.cpp ../code/autocomplete/autocomplete_engine.cpp ../code/tries/tries.cpp -o autocomplete
