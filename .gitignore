@@ -16,9 +16,6 @@
 *.out
 autocomplete
 
-# Build directories
-build/*
-bin/
 
 # IDE and editor files
 .vscode/
